@@ -1,0 +1,131 @@
+﻿@model IEnumerable<Pharmacy_3.Models.Products.Product>
+@using Microsoft.AspNetCore.Mvc;
+
+@{
+	// Setting up page details for pagination and filtering
+	ViewBag.Title = "Products Admin Panel";
+	int totalItems = ViewBag.TotalItems ?? 0;
+	int pageSize = ViewBag.CurrentPageSize ?? 10;
+	int currentPage = ViewBag.CurrentPage ?? 1;
+	int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
+}
+
+<h2>Products Admin Panel</h2>
+
+<form method="get" asp-action="Index">
+	<!-- Search field to filter products by Name or UPC -->
+	<div class="form-group">
+		<label>Search by Name or UPC:</label>
+		<input type="text" name="searchString" value="@ViewBag.CurrentFilter" class="form-control" />
+	</div>
+	<!-- Field to define the number of items per page -->
+	<div class="form-group">
+		<label>Items per Page:</label>
+		<input type="number" name="pageSize" value="@ViewBag.CurrentPageSize" min="1" class="form-control" />
+	</div>
+	<br />
+	<input type="submit" value="Filter" class="btn btn-primary" />
+</form>
+
+<table class="table">
+	<thead>
+		<tr>
+			<!-- Table headers with sorting links for Name, UPC, and Price -->
+			<th>@Html.ActionLink("Name", "Index", new { sortOrder = ViewBag.NameSortParm, currentFilter = ViewBag.CurrentFilter })</th>
+			<th>@Html.ActionLink("UPC", "Index", new { sortOrder = ViewBag.UPCSortParm, currentFilter = ViewBag.CurrentFilter })</th>
+			<th>@Html.ActionLink("Price", "Index", new { sortOrder = ViewBag.PriceSortParm, currentFilter = ViewBag.CurrentFilter })</th>
+			<th>Product Type</th>
+			<th>Actions</th>
+		</tr>
+	</thead>
+	<tbody>
+		<!-- Loop through all products to display them in the table -->
+		@foreach (var item in Model)
+		{
+			<tr>
+				<td>@item.Name</td>
+				<td>@item.UPC</td>
+				<td>@item.Price</td>
+				<td>
+					<!-- Determine the type of product dynamically -->
+					@{
+						string productType = item is Pharmacy_3.Models.Products.Consumables ? "Consumables" :
+						item is Pharmacy_3.Models.Products.Devices ? "Devices" :
+						item is Pharmacy_3.Models.Products.Drugs ? "Drugs" : "Unknown";
+					}
+					@productType
+				</td>
+				<td>
+					<!-- Action buttons for product operations: Details, Edit, Delete -->
+					<a asp-action="Details" asp-route-id="@item.UPC" class="btn btn-info">Details</a>
+					<a asp-action="Edit" asp-route-id="@item.UPC" class="btn btn-warning">Edit</a>
+					<a asp-action="Delete" asp-route-id="@item.UPC" class="btn btn-danger">Delete</a>
+				</td>
+			</tr>
+		}
+	</tbody>
+</table>
+
+<div>
+	Page @currentPage of @totalPages
+	<div class="pagination mt-3">
+		<!-- "Previous" button for pagination if the current page is not the first -->
+		@if (currentPage > 1)
+		{
+			<a asp-action="Index"
+			   asp-route-page="@(currentPage - 1)"
+			   asp-route-pageSize="@pageSize"
+			   asp-route-currentFilter="@ViewBag.CurrentFilter"
+			   class="btn btn-secondary">&lt;</a>
+		}
+
+		@* Define start and end page numbers for pagination *@
+		@{
+			int startPage = 1;
+			int endPage = totalPages;
+
+			// Set up pagination window for large number of pages
+			if (totalPages > 7)
+			{
+				startPage = Math.Max(1, currentPage - 3);
+				endPage = Math.Min(totalPages, currentPage + 3);
+
+				if (currentPage <= 4)
+				{
+					startPage = 1;
+					endPage = 7;
+				}
+				else if (currentPage + 3 >= totalPages)
+				{
+					startPage = totalPages - 6;
+					endPage = totalPages;
+				}
+			}
+		}
+
+		<!-- Page numbers in pagination -->
+		@for (int i = startPage; i <= endPage; i++)
+		{
+			<a asp-action="Index"
+			   asp-route-page="@i"
+			   asp-route-pageSize="@pageSize"
+			   asp-route-currentFilter="@ViewBag.CurrentFilter"
+			   class="@(i == currentPage ? "btn btn-primary" : "btn btn-secondary")">@i</a>
+		}
+
+		<!-- "Next" button for pagination if the current page is not the last -->
+		@if (currentPage < totalPages)
+		{
+			<a asp-action="Index"
+			   asp-route-page="@(currentPage + 1)"
+			   asp-route-pageSize="@pageSize"
+			   asp-route-currentFilter="@ViewBag.CurrentFilter"
+			   class="btn btn-secondary">&gt;</a>
+		}
+	</div>
+</div>
+
+<br />
+
+<!-- Button to create a new product -->
+<a asp-action="Create" class="btn btn-success">Add New Product</a>

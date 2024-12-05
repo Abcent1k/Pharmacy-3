@@ -1,0 +1,79 @@
+﻿@model Pharmacy_3.Models.Products.ProductViewModel
+
+@{
+	ViewBag.Title = "Edit Product";
+}
+
+<h2>Edit Product</h2>
+
+@if (!ViewData.ModelState.IsValid)
+{
+	<div class="alert alert-danger">
+		<strong>There were some errors with your submission:</strong>
+		@foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
+		{
+			<p>@error.ErrorMessage</p>
+		}
+	</div>
+}
+
+<form asp-action="Edit" method="post">
+	<input type="hidden" asp-for="ProductType" /> <!-- Приховане поле для збереження типу продукту -->
+
+	<div class="form-group">
+		<label asp-for="UPC" class="control-label"></label>
+		<input asp-for="UPC" class="form-control" readonly="readonly" />
+		<span asp-validation-for="UPC" class="text-danger"></span>
+	</div>
+	<div class="form-group">
+		<label asp-for="Name" class="control-label"></label>
+		<input asp-for="Name" class="form-control" />
+		<span asp-validation-for="Name" class="text-danger"></span>
+	</div>
+	<div class="form-group">
+		<label asp-for="Price" class="control-label"></label>
+		<input asp-for="Price" class="form-control" />
+		<span asp-validation-for="Price" class="text-danger"></span>
+	</div>
+	<div class="form-group">
+		<label asp-for="EDRPOU" class="control-label"></label>
+		<input asp-for="EDRPOU" class="form-control" readonly="readonly" />
+		<span asp-validation-for="EDRPOU" class="text-danger"></span>
+	</div>
+	<div class="form-group" id="ExpirationDateDiv" style="display:none;">
+		<label asp-for="ExpirationDate" class="control-label"></label>
+		<input asp-for="ExpirationDate" type="date" class="form-control" />
+		<span asp-validation-for="ExpirationDate" class="text-danger"></span>
+	</div>
+	<div class="form-group" id="NeedRecipeDiv" style="display:none;">
+		<label asp-for="NeedRecipe" class="control-label"></label>
+		<input asp-for="NeedRecipe" type="checkbox" />
+		<span asp-validation-for="NeedRecipe" class="text-danger"></span>
+	</div>
+
+	<div class="form-group">
+		<input type="submit" value="Update Product" class="btn btn-primary" />
+	</div>
+</form>
+
+<script>
+	// Call the function after the page is fully loaded
+	document.addEventListener("DOMContentLoaded", function () {
+		handleProductTypeChange(); // Initialize fields when the page loads
+	});
+
+	function handleProductTypeChange() {
+		var productType = document.getElementById("ProductType").value;
+
+		// Show or hide elements depending on the selected product type
+		document.getElementById("ExpirationDateDiv").style.display = (productType === "Consumables" || productType === "Drugs") ? "block" : "none";
+		document.getElementById("ConsumableTypeDiv").style.display = (productType === "Consumables") ? "block" : "none";
+		document.getElementById("DeviceTypeDiv").style.display = (productType === "Devices") ? "block" : "none";
+		document.getElementById("DrugTypeDiv").style.display = (productType === "Drugs") ? "block" : "none";
+		document.getElementById("NeedRecipeDiv").style.display = (productType === "Drugs") ? "block" : "none";
+	}
+</script>
+
+<div>
+	<a asp-action="Index">Back to List</a>
+</div>

@@ -1,0 +1,66 @@
+﻿@model Pharmacy_3.Models.Products.ProductViewModel
+
+@{
+	ViewBag.Title = "Product Details";
+}
+
+<h2>Product Details</h2>
+
+<div class="form-group">
+	<label>Product Type:</label>
+	<p>@Model.ProductType</p>
+</div>
+<div class="form-group">
+	<label>UPC:</label>
+	<p>@Model.UPC</p>
+</div>
+<div class="form-group">
+	<label>Name:</label>
+	<p>@Model.Name</p>
+</div>
+<div class="form-group">
+	<label>Price:</label>
+	<p>@Model.Price</p>
+</div>
+<div class="form-group">
+	<label>EDRPOU:</label>
+	<p>@Model.EDRPOU</p>
+</div>
+
+@if (Model.ProductType == "Consumables")
+{
+	<div class="form-group">
+		<label>Expiration Date:</label>
+		<p>@Model.ExpirationDate?.ToString("yyyy-MM-dd")</p>
+	</div>
+	<div class="form-group">
+		<label>Consumable Type:</label>
+		<p>@Model.ConsumableType</p>
+	</div>
+}
+@if (Model.ProductType == "Devices")
+{
+	<div class="form-group">
+		<label>Device Type:</label>
+		<p>@Model.DeviceType</p>
+	</div>
+}
+@if (Model.ProductType == "Drugs")
+{
+	<div class="form-group">
+		<label>Expiration Date:</label>
+		<p>@Model.ExpirationDate?.ToString("yyyy-MM-dd")</p>
+	</div>
+	<div class="form-group">
+		<label>Drug Type:</label>
+		<p>@Model.DrugType</p>
+	</div>
+	<div class="form-group">
+		<label>Need Recipe:</label>
+		<p>@(Model.NeedRecipe ? "Yes" : "No")</p>
+	</div>
+}
+
+<div>
+	<a asp-action="Index" class="btn btn-secondary">Back to List</a>
+</div>
