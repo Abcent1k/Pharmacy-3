@@ -2,10 +2,12 @@
 using Pharmacy_3.Models;
 using Pharmacy_3.Models.Products;
 using Pharmacy_3.Interfaces;
+using Microsoft.EntityFrameworkCore.Diagnostics;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 
 namespace Pharmacy_3.Data
 {
-	public class PharmacyContext : DbContext
+	public class PharmacyContext : IdentityDbContext<User>
 	{
 		internal DbSet<User> Users => Set<User>();
 		internal DbSet<Order> Orders => Set<Order>();
@@ -23,60 +25,85 @@ namespace Pharmacy_3.Data
 		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
 		{
 			optionsBuilder.UseLazyLoadingProxies();
+			optionsBuilder.ConfigureWarnings(warnings => warnings.Ignore(RelationalEventId.PendingModelChangesWarning));
 		}
 
 		protected override void OnModelCreating(ModelBuilder modelBuilder)
 		{
-			modelBuilder.Entity<User>().HasKey(u => u.UserId);
+			base.OnModelCreating(modelBuilder);
 
-			modelBuilder.Entity<Product>().Property(p => p.Price).HasPrecision(18, 2);
-			modelBuilder.Entity<Product>().ToTable(t => t.HasCheckConstraint("EDRPOU", "LEN(EDRPOU) = 8"));
+			modelBuilder.Entity<InventoryProduct>()
+				.HasKey(ip => ip.Id);
 
+			modelBuilder.Entity<Order>()
+				.Property(o => o.TotalPrice)
+				.HasPrecision(18, 2);
+
+			// Налаштування для Product
+			modelBuilder.Entity<Product>()
+				.Property(p => p.Price)
+				.HasPrecision(18, 2);
+
+			modelBuilder.Entity<Product>()
+				.ToTable(t => t.HasCheckConstraint("EDRPOU", "LEN(EDRPOU) = 8"));
+
+			// Налаштування для Consumables
 			modelBuilder.Entity<Consumables>()
 				.Property(c => c.ExpirationDate)
 				.HasDefaultValue(DateTime.Now.AddYears(5));
+
+			// Налаштування для Drugs
 			modelBuilder.Entity<Drugs>()
-				.Property(c => c.ExpirationDate)
+				.Property(d => d.ExpirationDate)
 				.HasDefaultValue(DateTime.Now.AddYears(1));
+
 			modelBuilder.Entity<Drugs>()
-				.Property(c => c.NeedRecipe)
+				.Property(d => d.NeedRecipe)
 				.HasDefaultValue(false);
 
-			modelBuilder.Entity<Drugs>().Property(p => p.DrugType).HasConversion<string>();
-			modelBuilder.Entity<Consumables>().Property(p => p.ConsumableType).HasConversion<string>();
-			modelBuilder.Entity<Devices>().Property(p => p.DeviceType).HasConversion<string>();
+			modelBuilder.Entity<Drugs>()
+				.Property(d => d.DrugType)
+				.HasConversion<string>();
 
-			modelBuilder.Entity<Order>().HasKey(o => new { o.Id, o.UserId });
-			modelBuilder.Entity<Order>().Property(o => o.TotalPrice).HasPrecision(18, 2);
+			modelBuilder.Entity<Consumables>()
+				.Property(c => c.ConsumableType)
+				.HasConversion<string>();
 
-			modelBuilder.Entity<InventoryProduct>().HasKey(p => new { p.OrderId, p.UserId, p.ProductUPC });
+			modelBuilder.Entity<Devices>()
+				.Property(d => d.DeviceType)
+				.HasConversion<string>();
 
-			// Configure TPH inheritance for Product and its subclasses
+			// Налаштування для TPH спадкування Product
 			modelBuilder.Entity<Product>()
 				.HasDiscriminator<string>("ProductType")
 				.HasValue<Consumables>("Consumables")
 				.HasValue<Devices>("Devices")
 				.HasValue<Drugs>("Drugs");
 
-			// Configure one-to-many relationship between User and Order
-			modelBuilder.Entity<User>()
-				.HasMany(u => u.Orders)
-				.WithOne(o => o.User)
-				.HasForeignKey(o => o.UserId)
-				.OnDelete(DeleteBehavior.NoAction); // Disable cascade delete
-
-			// Configure one-to-many relationship between Order and InventoryProduct
+			// Зв’язок між User і Order
 			modelBuilder.Entity<Order>()
-				.HasMany(o => o.InventoryProducts)
-				.WithOne(ip => ip.Order)
-				.HasForeignKey(ip => new { ip.OrderId, ip.UserId })
-				.OnDelete(DeleteBehavior.NoAction); // Disable cascade delete
+				.HasOne(o => o.User)
+				.WithMany(u => u.Orders)
+				.OnDelete(DeleteBehavior.NoAction);
 
-			// Configure one-to-many relationship between Product and InventoryProduct and
+			// Зв’язок між Order і InventoryProduct
+			modelBuilder.Entity<InventoryProduct>()
+				.HasOne(ip => ip.Order)
+				.WithMany(o => o.InventoryProducts)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			// Зв’язок між User і InventoryProduct
+			modelBuilder.Entity<InventoryProduct>()
+				.HasOne(ip => ip.User)
+				.WithMany(u => u.Products)
+				.OnDelete(DeleteBehavior.NoAction);
+
+			// Зв’язок між Product і InventoryProduct
 			modelBuilder.Entity<InventoryProduct>()
 				.HasOne(ip => ip.Product)
 				.WithMany(p => p.InventoryProducts)
 				.HasForeignKey(ip => ip.ProductUPC);
 		}
+
 	}
 }

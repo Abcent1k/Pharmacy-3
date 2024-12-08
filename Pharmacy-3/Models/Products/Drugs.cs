@@ -19,11 +19,11 @@ namespace Pharmacy_3.Models.Products
     }
 	public class Drugs : Product, IExpiration, IProductFormat
     {
-		[Required]
+		[Required(ErrorMessage = "The expiration date is required")]
 		public DateTime ExpirationDate { get; set; }
-		[Required]
+		[Required(ErrorMessage = "The type of drug is required")]
 		public DrugType DrugType { get; set; }
-		[Required]
+		[Required(ErrorMessage = "This field is required")]
 		public bool NeedRecipe { get; set; }
 
         public Drugs(uint uPC,

@@ -3,9 +3,11 @@ using Microsoft.EntityFrameworkCore;
 using Pharmacy_3.Models.Products;
 using Pharmacy_3.Interfaces;
 using PagedList;
+using Microsoft.AspNetCore.Authorization;
 
 namespace Pharmacy_3.Controllers
 {
+	[Authorize(Roles = "Admin")]
 	public class ProductsController : Controller
 	{
 		private readonly IProductService _productService;

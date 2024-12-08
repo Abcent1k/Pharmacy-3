@@ -10,7 +10,7 @@ namespace Pharmacy_3.Models.Products
     }
 	public class Devices : Product
     {
-		[Required]
+		[Required(ErrorMessage = "The type of device is required")]
 		public DeviceType DeviceType { get; set; }
         public Devices(uint uPC,
                      string name,

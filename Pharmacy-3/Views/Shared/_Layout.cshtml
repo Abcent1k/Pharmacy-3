@@ -28,6 +28,12 @@
 						<li class="nav-item">
 							<a class="nav-link" asp-controller="Products" asp-action="Index">Admin Panel</a>
 						</li>
+						@if (User.Identity.IsAuthenticated)
+						{
+							<li class="nav-item">
+								<a href="/Identity/Account/Logout" class=" nav-link text-dark">Logout</a>
+							</li>
+						}
                     </ul>
                 </div>
             </div>

@@ -13,14 +13,17 @@ namespace Pharmacy_3.Models.Products
     {
 		[Key]
 		[DatabaseGenerated(DatabaseGeneratedOption.None)]
+		[Required(ErrorMessage = "The UPC is required")]
 		public uint UPC { get; set; }
-		[Required]
-		[MaxLength(64)]
+		[Required(ErrorMessage = "The name is required")]
+		[MaxLength(64, ErrorMessage = "The name cannot exceed 64 characters")]
 		public string Name { get; set; }
-		[Required]
+		[Required(ErrorMessage = "The price is required")]
+		[Range(0.01, double.MaxValue, ErrorMessage = "The price must be greater than 0")]
 		public decimal Price { get; set; }
 		public virtual ICollection<InventoryProduct> InventoryProducts { get; set; }
-		[Required]
+		[Required(ErrorMessage = "EDRPOU is required")]
+		[Range(10000000, 99999999, ErrorMessage = "EDRPOU must be in a range 10000000-99999999")]
 		public uint EDRPOU { get; private set; }
 
         public Product(uint uPC, string name, decimal price, uint eDRPOU)

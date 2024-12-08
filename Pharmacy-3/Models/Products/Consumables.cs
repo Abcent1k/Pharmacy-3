@@ -13,9 +13,9 @@ namespace Pharmacy_3.Models.Products
 
 	public class Consumables : Product, IExpiration
     {
-		[Required]
+		[Required(ErrorMessage = "The expiration date is required")]
 		public DateTime ExpirationDate { get; set; }
-		[Required]
+		[Required(ErrorMessage = "The type of consumable is required")]
 		public ConsumableType ConsumableType { get; set; }
 
         public Consumables(uint uPC,

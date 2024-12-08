@@ -1,43 +1,42 @@
-﻿using Pharmacy_3.Models.Products;
-using Pharmacy_3.Interfaces;
-using System;
-using System.Collections.Generic;
+﻿using Pharmacy_3.Interfaces;
 using System.ComponentModel.DataAnnotations;
-using System.Linq;
+using Microsoft.AspNetCore.Identity;
 using System.Runtime.CompilerServices;
-using System.Text;
-using System.Threading.Tasks;
+
 [assembly: InternalsVisibleTo("DynamicProxyGenAssembly2")]
 
 namespace Pharmacy_3.Models
 {
-	public class User: IUser
+	public class User : IdentityUser, IUser
 	{
-		public int UserId { get; }
-		public virtual ICollection<Order>? Orders { get; }
-		public virtual ICollection<InventoryProduct> Products { get; }
-		[MaxLength(30)]
-		public string Name { get; private set; }
-		[MaxLength(30)]
-		public string Surname { get; private set; }
-		public string? Email { get; set; }
+		public virtual ICollection<Order>? Orders { get; private set; }
+		public virtual ICollection<InventoryProduct> Products { get; private set; }
 
-		public User(string name, string surname)
+		[Required(ErrorMessage = "The name is required")]
+		[MaxLength(30, ErrorMessage = "The name cannot exceed 30 characters")]
+		public string Name { get; set; }
+
+		[Required(ErrorMessage = "The surname is required")]
+		[MaxLength(30, ErrorMessage = "The surname cannot exceed 64 characters")]
+		public string Surname { get; set; }
+
+		[EmailAddress(ErrorMessage = "Incorrect email format")]
+		public override string? Email { get; set; }
+
+		// Constructors
+		public User(string name, string surname) : base()
 		{
 			Name = name;
 			Surname = surname;
 			Products = new List<InventoryProduct>();
 			Orders = new List<Order>();
 		}
-		public User(string name, string surname, int userId):this(name, surname)
-		{
-			UserId = userId;
-		}
-		public User(string name, string surname, int userId, string email):
-			this(name, surname, userId)
-		{
-			Email = email;
-		}
 
+		// Parameterless constructor required by Identity framework
+		public User() : base()
+		{
+			Products = new List<InventoryProduct>();
+			Orders = new List<Order>();
+		}
 	}
 }

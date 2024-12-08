@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Pharmacy_3.Models;
 using System.Diagnostics;
 
 namespace Pharmacy_3.Controllers
 {
+	[Authorize(Roles = "User,Admin")]
 	public class HomeController : Controller
 	{
 		private readonly ILogger<HomeController> _logger;
