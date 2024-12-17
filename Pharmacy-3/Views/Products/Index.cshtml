@@ -1,131 +1,138 @@
 ﻿@model IEnumerable<Pharmacy_3.Models.Products.Product>
-@using Microsoft.AspNetCore.Mvc;
-
 @{
-	// Setting up page details for pagination and filtering
 	ViewBag.Title = "Products Admin Panel";
-	int totalItems = ViewBag.TotalItems ?? 0;
-	int pageSize = ViewBag.CurrentPageSize ?? 10;
-	int currentPage = ViewBag.CurrentPage ?? 1;
-	int totalPages = (int)Math.Ceiling((double)totalItems / pageSize);
 }
 
 <h2>Products Admin Panel</h2>
 
-<form method="get" asp-action="Index">
-	<!-- Search field to filter products by Name or UPC -->
+<!-- Кнопка для переходу на сторінку створення нового продукту -->
+<div class="mb-3">
+	<a href="/Products/Create" class="btn btn-success">Add New Product</a>
+</div>
+
+<!-- Форма для фільтрації та кількості елементів на сторінці -->
+<form id="filterForm">
 	<div class="form-group">
 		<label>Search by Name or UPC:</label>
-		<input type="text" name="searchString" value="@ViewBag.CurrentFilter" class="form-control" />
+		<input type="text" id="searchString" class="form-control" placeholder="Enter Name or UPC" />
 	</div>
-	<!-- Field to define the number of items per page -->
 	<div class="form-group">
 		<label>Items per Page:</label>
-		<input type="number" name="pageSize" value="@ViewBag.CurrentPageSize" min="1" class="form-control" />
+		<input type="number" id="pageSize" value="10" min="1" class="form-control" />
 	</div>
 	<br />
-	<input type="submit" value="Filter" class="btn btn-primary" />
+	<button type="button" id="filterBtn" class="btn btn-primary">Filter</button>
 </form>
 
-<table class="table">
+<!-- Таблиця для продуктів -->
+<table class="table" id="productsTable">
 	<thead>
 		<tr>
-			<!-- Table headers with sorting links for Name, UPC, and Price -->
-			<th>@Html.ActionLink("Name", "Index", new { sortOrder = ViewBag.NameSortParm, currentFilter = ViewBag.CurrentFilter })</th>
-			<th>@Html.ActionLink("UPC", "Index", new { sortOrder = ViewBag.UPCSortParm, currentFilter = ViewBag.CurrentFilter })</th>
-			<th>@Html.ActionLink("Price", "Index", new { sortOrder = ViewBag.PriceSortParm, currentFilter = ViewBag.CurrentFilter })</th>
+			<th>
+				<a href="#" onclick="loadProducts('name')">Name</a>
+			</th>
+			<th>
+				<a href="#" onclick="loadProducts('upc')">UPC</a>
+			</th>
+			<th>
+				<a href="#" onclick="loadProducts('price')">Price</a>
+			</th>
 			<th>Product Type</th>
 			<th>Actions</th>
 		</tr>
 	</thead>
 	<tbody>
-		<!-- Loop through all products to display them in the table -->
-		@foreach (var item in Model)
-		{
-			<tr>
-				<td>@item.Name</td>
-				<td>@item.UPC</td>
-				<td>@item.Price</td>
-				<td>
-					<!-- Determine the type of product dynamically -->
-					@{
-						string productType = item is Pharmacy_3.Models.Products.Consumables ? "Consumables" :
-						item is Pharmacy_3.Models.Products.Devices ? "Devices" :
-						item is Pharmacy_3.Models.Products.Drugs ? "Drugs" : "Unknown";
-					}
-					@productType
-				</td>
-				<td>
-					<!-- Action buttons for product operations: Details, Edit, Delete -->
-					<a asp-action="Details" asp-route-id="@item.UPC" class="btn btn-info">Details</a>
-					<a asp-action="Edit" asp-route-id="@item.UPC" class="btn btn-warning">Edit</a>
-					<a asp-action="Delete" asp-route-id="@item.UPC" class="btn btn-danger">Delete</a>
-				</td>
-			</tr>
-		}
+		<!-- Дані завантажуватимуться через AJAX -->
 	</tbody>
 </table>
 
-<div>
-	Page @currentPage of @totalPages
-	<div class="pagination mt-3">
-		<!-- "Previous" button for pagination if the current page is not the first -->
-		@if (currentPage > 1)
-		{
-			<a asp-action="Index"
-			   asp-route-page="@(currentPage - 1)"
-			   asp-route-pageSize="@pageSize"
-			   asp-route-currentFilter="@ViewBag.CurrentFilter"
-			   class="btn btn-secondary">&lt;</a>
+<!-- Пагінація -->
+<div id="pagination" class="mt-3"></div>
+
+<!-- JavaScript для завантаження даних з Web API -->
+<script>
+	let currentPage = 1;
+	let currentSort = '';
+	let pageSize = 10;
+
+	document.addEventListener("DOMContentLoaded", function () {
+		loadProducts();
+		document.getElementById("filterBtn").addEventListener("click", function () {
+			currentPage = 1;
+			loadProducts();
+		});
+	});
+
+	function loadProducts(sortOrder = '') {
+		const searchString = document.getElementById("searchString").value || '';
+		pageSize = document.getElementById("pageSize").value || 10;
+		currentSort = sortOrder || currentSort;
+
+		fetch(`/api/productsapi?searchString=${searchString}&sortOrder=${currentSort}&page=${currentPage}&pageSize=${pageSize}`)
+			.then(response => response.json())
+			.then(data => {
+				renderTable(data.products);
+				renderPagination(data.totalItems, data.pageSize, data.currentPage);
+			})
+			.catch(error => console.error('Error loading products:', error));
+	}
+
+	function renderTable(products) {
+		const tableBody = document.querySelector("#productsTable tbody");
+		tableBody.innerHTML = "";
+
+		products.forEach(product => {
+			const formattedPrice = parseFloat(product.price).toFixed(2); // Форматування ціни з 2 знаками після точки
+			const row = `
+					<tr>
+						<td>${product.name}</td>
+						<td>${product.upc}</td>
+						<td>${formattedPrice}</td>
+						<td>${product.productType}</td>
+						<td>
+							<a href="/Products/Details/${product.upc}" class="btn btn-info">Details</a>
+							<a href="/Products/Edit/${product.upc}" class="btn btn-warning">Edit</a>
+							<button onclick="deleteProduct(${product.upc})" class="btn btn-danger">Delete</button>
+						</td>
+					</tr>
+				`;
+			tableBody.innerHTML += row;
+		});
+	}
+
+
+	function renderPagination(totalItems, pageSize, currentPage) {
+		const paginationDiv = document.getElementById("pagination");
+		const totalPages = Math.ceil(totalItems / pageSize);
+		paginationDiv.innerHTML = "";
+
+		if (currentPage > 1) {
+			paginationDiv.innerHTML += `<button class="btn btn-secondary" onclick="changePage(${currentPage - 1})">&lt;</button>`;
 		}
 
-		@* Define start and end page numbers for pagination *@
-		@{
-			int startPage = 1;
-			int endPage = totalPages;
+		for (let i = 1; i <= totalPages; i++) {
+			paginationDiv.innerHTML += `<button class="btn ${i === currentPage ? 'btn-primary' : 'btn-secondary'}" onclick="changePage(${i})">${i}</button>`;
+		}
 
-			// Set up pagination window for large number of pages
-			if (totalPages > 7)
-			{
-				startPage = Math.Max(1, currentPage - 3);
-				endPage = Math.Min(totalPages, currentPage + 3);
+		if (currentPage < totalPages) {
+			paginationDiv.innerHTML += `<button class="btn btn-secondary" onclick="changePage(${currentPage + 1})">&gt;</button>`;
+		}
+	}
 
-				if (currentPage <= 4)
-				{
-					startPage = 1;
-					endPage = 7;
+	function changePage(page) {
+		currentPage = page;
+		loadProducts();
+	}
+
+	function deleteProduct(id) {
+		fetch(`/api/productsapi/${id}`, { method: "DELETE" })
+			.then(response => {
+				if (response.ok) {
+					alert("Product deleted successfully!");
+					loadProducts();
+				} else {
+					alert("Failed to delete product.");
 				}
-				else if (currentPage + 3 >= totalPages)
-				{
-					startPage = totalPages - 6;
-					endPage = totalPages;
-				}
-			}
-		}
-
-		<!-- Page numbers in pagination -->
-		@for (int i = startPage; i <= endPage; i++)
-		{
-			<a asp-action="Index"
-			   asp-route-page="@i"
-			   asp-route-pageSize="@pageSize"
-			   asp-route-currentFilter="@ViewBag.CurrentFilter"
-			   class="@(i == currentPage ? "btn btn-primary" : "btn btn-secondary")">@i</a>
-		}
-
-		<!-- "Next" button for pagination if the current page is not the last -->
-		@if (currentPage < totalPages)
-		{
-			<a asp-action="Index"
-			   asp-route-page="@(currentPage + 1)"
-			   asp-route-pageSize="@pageSize"
-			   asp-route-currentFilter="@ViewBag.CurrentFilter"
-			   class="btn btn-secondary">&gt;</a>
-		}
-	</div>
-</div>
-
-<br />
-
-<!-- Button to create a new product -->
-<a asp-action="Create" class="btn btn-success">Add New Product</a>
+			});
+	}
+</script>

@@ -1,6 +1,7 @@
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Localization;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.OpenApi.Models;
 using Pharmacy_3.Data;
 using Pharmacy_3.Interfaces;
 using Pharmacy_3.Models;
@@ -11,6 +12,7 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.AddControllers();
 
 builder.Services.AddScoped<IProductService, ProductService>();
 
@@ -35,6 +37,22 @@ builder.Services.AddRazorPages();
 
 builder.Services.AddAuthentication();
 builder.Services.AddAuthorization();
+
+builder.Services.AddControllers()
+	.AddJsonOptions(options =>
+	{
+		options.JsonSerializerOptions.PropertyNameCaseInsensitive = true;
+	});
+
+
+// Додаємо Swagger
+builder.Services.AddSwaggerGen(c =>
+{
+	c.SwaggerDoc("v1", new OpenApiInfo { Title = "My API", Version = "v1" });
+});
+
+builder.Environment.EnvironmentName = "Development";
+
 
 var app = builder.Build();
 
@@ -106,18 +124,32 @@ app.UseRequestLocalization(new RequestLocalizationOptions
 	SupportedUICultures = supportedCultures
 });
 
-app.UseHttpsRedirection();
-app.UseStaticFiles();
+app.UseSwagger();
+app.UseSwaggerUI(c =>
+{
+	c.SwaggerEndpoint("/swagger/v1/swagger.json", "My API V1");
+});
 
+app.UseHttpsRedirection();
+
+app.UseStaticFiles();
 app.UseRouting();
 
 app.UseAuthentication();
 app.UseAuthorization();
 
+app.Use(async (context, next) =>
+{
+	Console.WriteLine($"Request: {context.Request.Method} {context.Request.Path}");
+	await next();
+});
+
+
 app.MapControllerRoute(
 	name: "default",
 	pattern: "{controller=Home}/{action=Index}/{id?}");
 
+app.MapControllers();
 app.MapRazorPages();
 
 app.Run();

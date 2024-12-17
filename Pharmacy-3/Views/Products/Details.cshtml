@@ -1,66 +1,118 @@
-﻿@model Pharmacy_3.Models.Products.ProductViewModel
-
-@{
+﻿@{
 	ViewBag.Title = "Product Details";
 }
 
 <h2>Product Details</h2>
 
-<div class="form-group">
-	<label>Product Type:</label>
-	<p>@Model.ProductType</p>
+<!-- Контейнер для відображення деталей продукту -->
+<div id="productDetails" class="mt-4">
+	<p>Loading...</p>
 </div>
-<div class="form-group">
-	<label>UPC:</label>
-	<p>@Model.UPC</p>
-</div>
-<div class="form-group">
-	<label>Name:</label>
-	<p>@Model.Name</p>
-</div>
-<div class="form-group">
-	<label>Price:</label>
-	<p>@Model.Price</p>
-</div>
-<div class="form-group">
-	<label>EDRPOU:</label>
-	<p>@Model.EDRPOU</p>
-</div>
-
-@if (Model.ProductType == "Consumables")
-{
-	<div class="form-group">
-		<label>Expiration Date:</label>
-		<p>@Model.ExpirationDate?.ToString("yyyy-MM-dd")</p>
-	</div>
-	<div class="form-group">
-		<label>Consumable Type:</label>
-		<p>@Model.ConsumableType</p>
-	</div>
-}
-@if (Model.ProductType == "Devices")
-{
-	<div class="form-group">
-		<label>Device Type:</label>
-		<p>@Model.DeviceType</p>
-	</div>
-}
-@if (Model.ProductType == "Drugs")
-{
-	<div class="form-group">
-		<label>Expiration Date:</label>
-		<p>@Model.ExpirationDate?.ToString("yyyy-MM-dd")</p>
-	</div>
-	<div class="form-group">
-		<label>Drug Type:</label>
-		<p>@Model.DrugType</p>
-	</div>
-	<div class="form-group">
-		<label>Need Recipe:</label>
-		<p>@(Model.NeedRecipe ? "Yes" : "No")</p>
-	</div>
-}
 
 <div>
 	<a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </div>
+
+<script>
+	document.addEventListener("DOMContentLoaded", function () {
+		loadProductDetails();
+	});
+
+	function loadProductDetails() {
+		// Отримання productId з URL (шлях маршруту)
+		const pathParts = window.location.pathname.split('/');
+		const productId = pathParts[pathParts.length - 1];
+
+		if (!productId || isNaN(productId)) {
+			document.getElementById("productDetails").innerHTML = "<p>Invalid or missing product ID.</p>";
+			return;
+		}
+
+		// Запит до Web API
+		fetch(`/api/productsapi/${productId}`)
+			.then(response => {
+				if (!response.ok) {
+					throw new Error(`HTTP error! Status: ${response.status}`);
+				}
+				return response.json();
+			})
+			.then(product => {
+				renderProductDetails(product);
+			})
+			.catch(error => {
+				console.error("Error loading product details:", error);
+				document.getElementById("productDetails").innerHTML = "<p>Failed to load product details.</p>";
+			});
+	}
+
+	function renderProductDetails(product) {
+		const detailsDiv = document.getElementById("productDetails");
+
+		let detailsHtml = `
+				<div class="form-group">
+					<label>Product Type:</label>
+					<p>${product.productType}</p>
+				</div>
+				<div class="form-group">
+					<label>UPC:</label>
+					<p>${product.upc}</p>
+				</div>
+				<div class="form-group">
+					<label>Name:</label>
+					<p>${product.name}</p>
+				</div>
+				<div class="form-group">
+					<label>Price:</label>
+					<p>${product.price}</p>
+				</div>
+				<div class="form-group">
+					<label>EDRPOU:</label>
+					<p>${product.edrpou}</p>
+				</div>
+			`;
+
+		// Відображаємо додаткові поля залежно від типу продукту
+		switch (product.productType) {
+			case "Consumables":
+				detailsHtml += `
+						<div class="form-group">
+							<label>Expiration Date:</label>
+							<p>${product.expirationDate ? product.expirationDate.split('T')[0] : "N/A"}</p>
+						</div>
+						<div class="form-group">
+							<label>Consumable Type:</label>
+							<p>${product.consumableType}</p>
+						</div>
+					`;
+				break;
+			case "Devices":
+				detailsHtml += `
+						<div class="form-group">
+							<label>Device Type:</label>
+							<p>${product.deviceType}</p>
+						</div>
+					`;
+				break;
+			case "Drugs":
+				detailsHtml += `
+						<div class="form-group">
+							<label>Expiration Date:</label>
+							<p>${product.expirationDate ? product.expirationDate.split('T')[0] : "N/A"}</p>
+						</div>
+						<div class="form-group">
+							<label>Drug Type:</label>
+							<p>${product.drugType}</p>
+						</div>
+						<div class="form-group">
+							<label>Need Recipe:</label>
+							<p>${product.needRecipe ? "Yes" : "No"}</p>
+						</div>
+					`;
+				break;
+			default:
+				detailsHtml += `<p>Unknown product type.</p>`;
+		}
+
+		detailsDiv.innerHTML = detailsHtml;
+	}
+</script>

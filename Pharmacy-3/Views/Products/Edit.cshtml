@@ -6,74 +6,181 @@
 
 <h2>Edit Product</h2>
 
-@if (!ViewData.ModelState.IsValid)
-{
-	<div class="alert alert-danger">
-		<strong>There were some errors with your submission:</strong>
-		@foreach (var error in ViewData.ModelState.Values.SelectMany(v => v.Errors))
-		{
-			<p>@error.ErrorMessage</p>
-		}
-	</div>
-}
+<div id="editErrors" class="alert alert-danger" style="display:none;">
+	<strong>There were some errors with your submission:</strong>
+	<ul id="errorList"></ul>
+</div>
 
-<form asp-action="Edit" method="post">
-	<input type="hidden" asp-for="ProductType" /> <!-- Приховане поле для збереження типу продукту -->
+<form id="editForm">
+	<input type="hidden" id="ProductType" name="ProductType" /> <!-- Тип продукту -->
 
 	<div class="form-group">
-		<label asp-for="UPC" class="control-label"></label>
-		<input asp-for="UPC" class="form-control" readonly="readonly" />
-		<span asp-validation-for="UPC" class="text-danger"></span>
+		<label>UPC:</label>
+		<input id="UPC" name="UPC" class="form-control" readonly />
 	</div>
 	<div class="form-group">
-		<label asp-for="Name" class="control-label"></label>
-		<input asp-for="Name" class="form-control" required title="Name is required" />
-		<span asp-validation-for="Name" class="text-danger"></span>
+		<label>Name:</label>
+		<input id="Name" name="Name" class="form-control" required />
 	</div>
 	<div class="form-group">
-		<label asp-for="Price" class="control-label"></label>
-		<input asp-for="Price" class="form-control" pattern="^\d+,\d{1,2}$" title="Number format: 123,45" />
-		<span asp-validation-for="Price" class="text-danger"></span>
+		<label>Price:</label>
+		<input id="Price" name="Price" class="form-control" pattern="^\d+,\d{1,2}$" />
 	</div>
 	<div class="form-group">
-		<label asp-for="EDRPOU" class="control-label"></label>
-		<input asp-for="EDRPOU" class="form-control" readonly="readonly" />
-		<span asp-validation-for="EDRPOU" class="text-danger"></span>
+		<label>EDRPOU:</label>
+		<input id="EDRPOU" name="EDRPOU" class="form-control" readonly />
 	</div>
 	<div class="form-group" id="ExpirationDateDiv" style="display:none;">
-		<label asp-for="ExpirationDate" class="control-label"></label>
-		<input asp-for="ExpirationDate" type="date" class="form-control" />
-		<span asp-validation-for="ExpirationDate" class="text-danger"></span>
+		<label>Expiration Date:</label>
+		<input id="ExpirationDate" name="ExpirationDate" type="date" class="form-control" />
 	</div>
 	<div class="form-group" id="NeedRecipeDiv" style="display:none;">
-		<label asp-for="NeedRecipe" class="control-label"></label>
-		<input asp-for="NeedRecipe" type="checkbox" />
-		<span asp-validation-for="NeedRecipe" class="text-danger"></span>
+		<label>Need Recipe:</label>
+		<input id="NeedRecipe" name="NeedRecipe" type="checkbox" />
 	</div>
 
-	<div class="form-group">
-		<input type="submit" value="Update Product" class="btn btn-primary" />
-	</div>
+	<button type="button" id="updateBtn" class="btn btn-primary">Update Product</button>
 </form>
 
 <script>
-	// Call the function after the page is fully loaded
 	document.addEventListener("DOMContentLoaded", function () {
-		handleProductTypeChange(); // Initialize fields when the page loads
+		loadProductDetails();
+
+		const priceInput = document.getElementById("Price");
+		const priceError = document.getElementById("priceError");
+
+		priceInput.addEventListener("input", function () {
+			const priceValue = priceInput.value;
+
+			// Регулярний вираз для перевірки формату (ціле число або число з двома знаками після точки)
+			const priceRegex = /^\d+(\.\d{1,2})?$/;
+
+			if (priceRegex.test(priceValue) || priceValue === "") {
+				priceInput.classList.remove("is-invalid");
+				priceError.style.display = "none";
+			} else {
+				priceInput.classList.add("is-invalid");
+				priceError.style.display = "block";
+			}
+		});
+
+		document.getElementById("updateBtn").addEventListener("click", function () {
+			updateProduct();
+		});
 	});
 
-	function handleProductTypeChange() {
-		var productType = document.getElementById("ProductType").value;
+	// Завантаження даних продукту через Web API
+	function loadProductDetails() {
+		const productId = window.location.pathname.split('/').pop();
 
-		// Show or hide elements depending on the selected product type
+		fetch(`/api/productsapi/${productId}`)
+			.then(response => response.json())
+			.then(product => {
+				document.getElementById("UPC").value = product.upc;
+				document.getElementById("Name").value = product.name;
+				document.getElementById("Price").value = product.price;
+				document.getElementById("EDRPOU").value = product.edrpou;
+				document.getElementById("ProductType").value = product.productType;
+
+				if (product.expirationDate) {
+					document.getElementById("ExpirationDate").value = product.expirationDate.split('T')[0];
+				}
+				if (product.needRecipe !== null) {
+					document.getElementById("NeedRecipe").checked = product.needRecipe;
+				}
+
+				handleProductTypeChange(product.productType);
+			})
+			.catch(error => {
+				console.error("Error loading product:", error);
+				alert("Failed to load product details.");
+			});
+	}
+
+	// Обробка зміни полів для типу продукту
+	function handleProductTypeChange(productType) {
 		document.getElementById("ExpirationDateDiv").style.display = (productType === "Consumables" || productType === "Drugs") ? "block" : "none";
-		document.getElementById("ConsumableTypeDiv").style.display = (productType === "Consumables") ? "block" : "none";
-		document.getElementById("DeviceTypeDiv").style.display = (productType === "Devices") ? "block" : "none";
-		document.getElementById("DrugTypeDiv").style.display = (productType === "Drugs") ? "block" : "none";
 		document.getElementById("NeedRecipeDiv").style.display = (productType === "Drugs") ? "block" : "none";
+	}
+
+	// Відправлення PUT-запиту для оновлення продукту
+	function updateProduct() {
+		const upc = document.getElementById("UPC").value;
+		const name = document.getElementById("Name").value;
+		const price = document.getElementById("Price").value;
+		const productType = document.getElementById("ProductType").value;
+
+		// Перевірка наявності елементів
+		if (!upc || !name || !price || !productType) {
+			console.error("Required fields are missing.");
+			alert("Please fill out all required fields.");
+			return;
+		}
+
+		const data = {
+			UPC: upc,
+			Name: name,
+			Price: parseFloat(price),
+			ProductType: productType
+		};
+
+		// Додаткові поля для типу продукту
+		if (productType === "Consumables") {
+			data.ExpirationDate = document.getElementById("ExpirationDate")?.value;
+			data.ConsumableType = document.getElementById("ConsumableType")?.value;
+		} else if (productType === "Devices") {
+			data.DeviceType = document.getElementById("DeviceType")?.value;
+		} else if (productType === "Drugs") {
+			data.ExpirationDate = document.getElementById("ExpirationDate")?.value;
+			data.DrugType = document.getElementById("DrugType")?.value;
+			data.NeedRecipe = document.getElementById("NeedRecipe")?.checked || false;
+		}
+
+		console.log("Submitting data:", data);
+
+		fetch(`/api/productsapi/${upc}`, {
+			method: "PUT",
+			headers: {
+				"Content-Type": "application/json"
+			},
+			body: JSON.stringify(data)
+		})
+			.then(response => {
+				if (response.ok) {
+					alert("Product updated successfully!");
+					window.location.href = "/Products";
+				} else {
+					throw new Error("Failed to update product.");
+				}
+			})
+			.catch(error => {
+				console.error("Error:", error);
+				alert("An error occurred while updating the product.");
+			});
+	}
+
+
+	// Відображення помилок
+	function displayErrors(errors) {
+		const errorList = document.getElementById("errorList");
+		errorList.innerHTML = "";
+
+		if (errors && errors.errors) {
+			for (const key in errors.errors) {
+				if (errors.errors.hasOwnProperty(key)) {
+					errors.errors[key].forEach(err => {
+						const listItem = document.createElement("li");
+						listItem.textContent = err;
+						errorList.appendChild(listItem);
+					});
+				}
+			}
+		}
+
+		document.getElementById("editErrors").style.display = "block";
 	}
 </script>
 
 <div>
-	<a asp-action="Index">Back to List</a>
+	<a asp-action="Index" class="btn btn-secondary">Back to List</a>
 </div>
