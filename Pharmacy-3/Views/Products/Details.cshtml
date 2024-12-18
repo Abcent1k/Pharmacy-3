@@ -19,7 +19,6 @@
 	});
 
 	function loadProductDetails() {
-		// Отримання productId з URL (шлях маршруту)
 		const pathParts = window.location.pathname.split('/');
 		const productId = pathParts[pathParts.length - 1];
 
@@ -28,7 +27,6 @@
 			return;
 		}
 
-		// Запит до Web API
 		fetch(`/api/productsapi/${productId}`)
 			.then(response => {
 				if (!response.ok) {
@@ -71,7 +69,6 @@
 				</div>
 			`;
 
-		// Відображаємо додаткові поля залежно від типу продукту
 		switch (product.productType) {
 			case "Consumables":
 				detailsHtml += `

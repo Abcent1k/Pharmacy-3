@@ -17,7 +17,7 @@ namespace Pharmacy_3.Controllers
 			_productService = productService;
 		}
 
-		// GET: api/products?searchString=...&sortOrder=...&page=...&pageSize=...
+		// GET: api/products
 		[HttpGet]
 		public async Task<IActionResult> GetProducts(
 	[FromQuery] string searchString = null,
@@ -164,7 +164,7 @@ namespace Pharmacy_3.Controllers
 					{
 						drug.ExpirationDate = model.ExpirationDate ?? drug.ExpirationDate;
 						drug.DrugType = model.DrugType ?? drug.DrugType;
-						drug.NeedRecipe = model.NeedRecipe; // Обробляємо NeedRecipe лише для Drugs
+						drug.NeedRecipe = model.NeedRecipe;
 					}
 					break;
 
@@ -194,7 +194,6 @@ namespace Pharmacy_3.Controllers
 		{
 			if (!ModelState.IsValid)
 			{
-				// Повертаємо всі помилки з ModelState
 				var errors = ModelState
 					.Where(e => e.Value.Errors.Count > 0)
 					.ToDictionary(
@@ -273,13 +272,11 @@ namespace Pharmacy_3.Controllers
 						return BadRequest(new { error = "Invalid product type." });
 				}
 
-				// Додаємо продукт до бази даних
 				await _productService.AddProductAsync(product);
 				return Ok(new { message = "Product created successfully!", product });
 			}
 			catch (Exception ex)
 			{
-				// Логування помилки
 				Console.WriteLine($"Error: {ex.Message}");
 				return StatusCode(500, new
 				{

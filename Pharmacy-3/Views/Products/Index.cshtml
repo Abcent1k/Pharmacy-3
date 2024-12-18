@@ -82,7 +82,7 @@
 		tableBody.innerHTML = "";
 
 		products.forEach(product => {
-			const formattedPrice = parseFloat(product.price).toFixed(2); // Форматування ціни з 2 знаками після точки
+			const formattedPrice = parseFloat(product.price).toFixed(2);
 			const row = `
 					<tr>
 						<td>${product.name}</td>

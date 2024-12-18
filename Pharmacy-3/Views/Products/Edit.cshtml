@@ -12,7 +12,7 @@
 </div>
 
 <form id="editForm">
-	<input type="hidden" id="ProductType" name="ProductType" /> <!-- Тип продукту -->
+	<input type="hidden" id="ProductType" name="ProductType" />
 
 	<div class="form-group">
 		<label>UPC:</label>
@@ -52,7 +52,6 @@
 		priceInput.addEventListener("input", function () {
 			const priceValue = priceInput.value;
 
-			// Регулярний вираз для перевірки формату (ціле число або число з двома знаками після точки)
 			const priceRegex = /^\d+(\.\d{1,2})?$/;
 
 			if (priceRegex.test(priceValue) || priceValue === "") {
@@ -69,7 +68,7 @@
 		});
 	});
 
-	// Завантаження даних продукту через Web API
+	
 	function loadProductDetails() {
 		const productId = window.location.pathname.split('/').pop();
 
@@ -97,20 +96,17 @@
 			});
 	}
 
-	// Обробка зміни полів для типу продукту
 	function handleProductTypeChange(productType) {
 		document.getElementById("ExpirationDateDiv").style.display = (productType === "Consumables" || productType === "Drugs") ? "block" : "none";
 		document.getElementById("NeedRecipeDiv").style.display = (productType === "Drugs") ? "block" : "none";
 	}
 
-	// Відправлення PUT-запиту для оновлення продукту
 	function updateProduct() {
 		const upc = document.getElementById("UPC").value;
 		const name = document.getElementById("Name").value;
 		const price = document.getElementById("Price").value;
 		const productType = document.getElementById("ProductType").value;
 
-		// Перевірка наявності елементів
 		if (!upc || !name || !price || !productType) {
 			console.error("Required fields are missing.");
 			alert("Please fill out all required fields.");
@@ -124,7 +120,6 @@
 			ProductType: productType
 		};
 
-		// Додаткові поля для типу продукту
 		if (productType === "Consumables") {
 			data.ExpirationDate = document.getElementById("ExpirationDate")?.value;
 			data.ConsumableType = document.getElementById("ConsumableType")?.value;
@@ -159,8 +154,6 @@
 			});
 	}
 
-
-	// Відображення помилок
 	function displayErrors(errors) {
 		const errorList = document.getElementById("errorList");
 		errorList.innerHTML = "";

@@ -109,7 +109,7 @@
 				: null,
 			NeedRecipe: productType === "Drugs"
 				? document.getElementById("NeedRecipe").checked
-				: false // Передаємо false для інших типів
+				: false
 		};
 
 
@@ -122,7 +122,6 @@
 		})
 			.then(response => {
 				if (!response.ok) {
-					// Обробка помилок валідації
 					return response.json().then(error => {
 						let errorMessage = "Error: ";
 
@@ -140,15 +139,15 @@
 							}
 						}
 
-						alert(errorMessage); // Виведення помилок у alert
-						return; // Завершуємо обробку тут, не кидаємо помилку
+						alert(errorMessage);
+						return;
 					});
 				}
-				return response.json(); // Успішна відповідь
+				return response.json();
 			})
 			.then(data => {
-				if (data) { // Перевірка, щоб не викликати alert при обробленій помилці
-					alert(data.message); // Повідомлення про успіх
+				if (data) {
+					alert(data.message);
 					window.location.href = '/Products/Index';
 				}
 			})
@@ -164,7 +163,7 @@
 
 	function getEnumValue(selectId) {
 		const selectElement = document.getElementById(selectId);
-		return selectElement.selectedIndex; // Повертає індекс вибраного значення
+		return selectElement.selectedIndex;
 	}
 
 </script>
